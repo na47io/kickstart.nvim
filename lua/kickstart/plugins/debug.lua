@@ -23,6 +23,21 @@ return {
 
     -- Add your own debuggers here
     'leoluz/nvim-dap-go',
+    --
+    -- JavaScript/Node debugging
+    {
+      'microsoft/vscode-js-debug',
+      build = 'npm install --legacy-peer-deps && npx gulp vsDebugServerBundle && mv dist out',
+    },
+    {
+      'mxsdev/nvim-dap-vscode-js',
+      config = function()
+        require('dap-vscode-js').setup {
+          debugger_path = vim.fn.stdpath 'data' .. '/lazy/vscode-js-debug',
+          adapters = { 'pwa-node', 'pwa-chrome', 'pwa-msedge', 'node-terminal', 'pwa-extensionHost' },
+        }
+      end,
+    },
   },
   keys = {
     -- Basic debugging keymaps, feel free to change to your liking!
@@ -144,5 +159,37 @@ return {
         detached = vim.fn.has 'win32' == 0,
       },
     }
+
+    dap.adapters['pwa-node'] = {
+      type = 'server',
+      host = 'localhost',
+      port = '${port}',
+      executable = {
+        command = 'node',
+        -- 💀 Make sure to update this path to point to your installation
+        args = { '/Users/nik/.local/share/vscode-js-debug/js-debug/src/dapDebugServer.js', '${port}' },
+      },
+    }
+    for _, language in ipairs { 'typescript', 'javascript' } do
+      dap.configurations[language] = {
+        {
+          type = 'pwa-node',
+          request = 'launch',
+          name = 'Launch file',
+          program = '${file}',
+          cwd = '${workspaceFolder}',
+          sourceMaps = true,
+        },
+        {
+          type = 'pwa-node',
+          request = 'attach',
+          name = 'Attach to app',
+          port = 5101,
+          cwd = '${workspaceFolder}/apps/app',
+          sourceMaps = true,
+          restart = true,
+        },
+      }
+    end
   end,
 }
